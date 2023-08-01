@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "528188019641",
+    "firebase_url": "https://instagram-video-download-a802f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "instagram-video-download-a802f",
+    "storage_bucket": "instagram-video-download-a802f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:528188019641:android:5a7cbb99aee931c0e39c68",
+        "android_client_info": {
+          "package_name": "com.example.instagramvideodownloader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "528188019641-cdcbhc7c6gqskoe6cqpco3b55e55rmkf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOb3urc9O4KSR7nWKnI4VPCPg6yD2S3-4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "528188019641-cdcbhc7c6gqskoe6cqpco3b55e55rmkf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
