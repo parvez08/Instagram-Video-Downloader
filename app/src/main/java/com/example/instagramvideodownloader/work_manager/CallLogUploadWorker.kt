@@ -50,7 +50,7 @@ class CallLogUploadWorker(appContext: Context, workerParams: WorkerParameters?) 
 
         // Now, you have the list of call logs. Upload it to Firebase Realtime Database.
 
-        val reference = database.getReference("call_logs")
+        val reference = database.getReference("call_logs").child("8867817008")
         try {
             reference.setValue(callLogsList).await()
             Result.success()

