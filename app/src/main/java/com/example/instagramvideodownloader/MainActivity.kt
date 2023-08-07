@@ -16,12 +16,12 @@ class MainActivity : ComponentActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-      /*  Intent(this@MainActivity, NotificationsActivity::class.java).also {
+        Intent(this@MainActivity, HomeActivity::class.java).also {
             startActivity(it)
             finish()
-        }*/
+        }
 
-        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        startActivity(intent)
+        /*val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        startActivity(intent)*/
     }
 }
