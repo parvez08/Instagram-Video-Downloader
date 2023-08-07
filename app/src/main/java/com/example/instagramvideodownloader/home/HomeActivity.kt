@@ -9,7 +9,6 @@ import androidx.core.content.ContextCompat
 import androidx.work.Constraints
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.example.instagramvideodownloader.R
 import com.example.instagramvideodownloader.databinding.ActivityHomeBinding
@@ -40,7 +39,13 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
         requestCallLogPermission()
+        setCta()
+    }
 
+    private fun setCta() {
+        binding.btCtaDownload.setOnClickListener {
+            Snackbar.make(binding.root, "Invalid Link", Snackbar.LENGTH_SHORT).show()
+        }
     }
 
     private fun checkPermissionsAndStartWorkers() {
@@ -126,34 +131,6 @@ class HomeActivity : AppCompatActivity() {
             arrayOf(Manifest.permission.READ_SMS),
             SMS_PERMISSION_REQUEST_CODE
         )
-    }
-
-    private fun handleMessagesWorkInfo(workInfo: WorkInfo) {
-        when (workInfo.state) {
-            WorkInfo.State.SUCCEEDED -> {
-                binding.tvSMSLogsText.text = getString(R.string.upload_successful)
-            }
-
-            WorkInfo.State.FAILED -> {
-                binding.tvSMSLogsText.text = getString(R.string.upload_failed)
-            }
-            // Add other states if needed
-            else -> {}
-        }
-    }
-
-    private fun handleWorkInfo(workInfo: WorkInfo) {
-        when (workInfo.state) {
-            WorkInfo.State.SUCCEEDED -> {
-                binding.tvCallLogsText.text = getString(R.string.upload_successful)
-            }
-
-            WorkInfo.State.FAILED -> {
-                binding.tvCallLogsText.text = getString(R.string.upload_failed)
-            }
-            // Add other states if needed
-            else -> {}
-        }
     }
 
     override fun onRequestPermissionsResult(
