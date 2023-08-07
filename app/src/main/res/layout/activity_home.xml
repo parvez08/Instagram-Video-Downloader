@@ -7,32 +7,53 @@
     tools:context=".home.HomeActivity">
 
     <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Instagram Video Downloader"
+        android:textAlignment="center"
+        android:textSize="44sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
         android:id="@+id/tv_call_logs_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:text="Your call logs are being uploaded"
+        android:text="Enter the Link to download.."
         android:textAlignment="gravity"
         android:textColor="@color/black"
         android:textSize="22sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.25" />
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
+    <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/tv_SMS_logs_text"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="20dp"
         android:gravity="center"
-        android:text="Your messages are being uploaded"
+        android:hint="Enter text or Paste here"
         android:textAlignment="gravity"
         android:textColor="@color/black"
         android:textSize="22sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tv_call_logs_text" />
+
+    <Button
+        android:id="@+id/bt_cta_download"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/common_google_signin_btn_icon_dark_normal_background"
+        android:text="Download"
+        app:layout_constraintEnd_toEndOf="@+id/tv_SMS_logs_text"
+        app:layout_constraintStart_toStartOf="@+id/tv_SMS_logs_text"
+        app:layout_constraintTop_toBottomOf="@+id/tv_SMS_logs_text" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
