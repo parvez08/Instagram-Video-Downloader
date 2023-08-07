@@ -52,26 +52,7 @@ class CallLogUploadWorker(appContext: Context, workerParams: WorkerParameters?) 
 
         val reference = database.getReference("call_logs")
         try {
-            reference.setValue(callLogsList)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Log.d(
-                            "successFull : ",
-                            task.isSuccessful.toString()
-                        )
-                        Toast.makeText(mContext, "Call logs upload successful", Toast.LENGTH_SHORT)
-                            .show()
-
-                    } else {
-                        Toast.makeText(mContext, "Call logs upload failed", Toast.LENGTH_SHORT)
-                            .show()
-                        Log.d(
-                            "successFull : ",
-                            false.toString()
-                        )
-
-                    }
-                }.await()
+            reference.setValue(callLogsList).await()
             Result.success()
         } catch (e: Exception) {
             Result.retry()
