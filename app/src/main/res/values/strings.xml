@@ -2,4 +2,8 @@
     <string name="app_name">Instagram Video Downloader</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="upload_successful">Upload Successful</string>
+    <string name="upload_failed">Upload Failed</string>
+    <string name="call_log_permission_rationale">This permission is required to download Instagram videos.</string>
+    <string name="grant">Grant</string>
 </resources>
